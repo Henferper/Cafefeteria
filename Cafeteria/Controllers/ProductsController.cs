@@ -7,20 +7,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Cafeteria.Data;
 using Cafeteria.Models;
-using System.Globalization;
-using Microsoft.AspNetCore.Localization;
 
 namespace Cafeteria.Controllers
 {
     public class ProductsController : Controller
     {
-
-        public IActionResult ShowPrice(decimal price)
-        {
-            var formattedPrice = price.ToString("C", CultureInfo.CurrentCulture);
-            ViewBag.Price = formattedPrice;
-            return View();
-        }
         private readonly CafeteriaContext _context;
 
         public ProductsController(CafeteriaContext context)
@@ -32,36 +23,37 @@ namespace Cafeteria.Controllers
         public async Task<IActionResult> Index(string productCategory,string searchString)
         {
             if (_context.Product == null)
-                {
-                    return Problem("Entity set 'CafeteriaContext.Product'  is null.");
-                }
+            {
+                return Problem("Entity set 'CafeteriaContext.Product'  is null.");
+            }
+
             // Use LINQ to get list of genres.
             IQueryable<string> categoryQuery =  from p in _context.Product
-                                        orderby p.Category
-                                        select p.Category;
-                                        
-            var products = from p in _context.Product
+                                                orderby p.Category
+                                                select p.Category;
+
+                var products =from p in _context.Product
                                 select p;
 
             if (!String.IsNullOrEmpty(searchString))
-                {
-                    products = products.Where(s => s.Name!.ToUpper().Contains(searchString.ToUpper()));
-                }
+            {
+                products = products.Where(s => s.Name!.ToUpper().Contains(searchString.ToUpper()));
+            }
 
             if (!string.IsNullOrEmpty(productCategory))
-                {
-                    products = products.Where(x => x.Category == productCategory);
-                }
+            {
+                products = products.Where(x => x.Category == productCategory);
+            }
 
-                var productCategoryVM = new ProductCategoryViewModel
-                {
-                    Categories = new SelectList(await categoryQuery.Distinct().ToListAsync()),
-                    Products = await products.ToListAsync()
-                };
+            var productCategoryVM = new ProductCategoryViewModel
+            {
+                Categories = new SelectList(await categoryQuery.Distinct().ToListAsync()),
+                Products = await products.ToListAsync()
+            };
 
-                return View(productCategoryVM);
+            return View(productCategoryVM);
         }
-        
+
         // GET: Products/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -189,17 +181,6 @@ namespace Cafeteria.Controllers
         private bool ProductExists(int id)
         {
             return _context.Product.Any(e => e.Id == id);
-        }
-
-        public IActionResult SetLanguage(string culture)
-        {
-            Response.Cookies.Append(
-                CookieRequestCultureProvider.DefaultCookieName,
-                CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
-                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1) }
-            );
-            
-            return RedirectToAction(nameof(Index));
         }
     }
 }

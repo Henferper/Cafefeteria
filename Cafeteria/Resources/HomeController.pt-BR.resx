@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="GreetingMessage" xml:space="preserve">
+    <value>Cafeteria!</value>
+  </data>
+  <data name="PrivacyPolicy" xml:space="preserve">
+    <value>Veja nossa política de privacidade.</value>
+  </data>
+</root>

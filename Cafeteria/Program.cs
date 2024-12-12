@@ -3,56 +3,51 @@ using Microsoft.Extensions.DependencyInjection;
 using Cafeteria.Data;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
-using Microsoft.Extensions.Options;
 
-internal class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Configuração de culturas suportadas
+var supportedCultures = new[] { "en-US", "pt-BR" };
+var localizationOptions = new RequestLocalizationOptions
 {
-    private static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+    DefaultRequestCulture = new RequestCulture("en-US"),
+    SupportedCultures = supportedCultures.Select(c => new CultureInfo(c)).ToList(),
+    SupportedUICultures = supportedCultures.Select(c => new CultureInfo(c)).ToList(),
+};
 
-        var supportedCultures = new[]
-        {
-            new CultureInfo("en-US"),
-            new CultureInfo("fr-FR"),
-            new CultureInfo("pt-BR")
-        };
+// Adicionar serviços MVC com suporte à localização
+builder.Services.AddControllersWithViews()
+                .AddViewLocalization()
+                .AddDataAnnotationsLocalization();
 
-        builder.Services.Configure<RequestLocalizationOptions>(options =>
-        {
-            options.DefaultRequestCulture = new RequestCulture("en-US");
-            options.SupportedCultures = supportedCultures;
-            options.SupportedUICultures = supportedCultures;
-        });
+// Configuração do banco de dados
+builder.Services.AddDbContext<CafeteriaContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("CafeteriaContext") ?? 
+                      throw new InvalidOperationException("Connection string 'CafeteriaContext' not found.")));
 
-        builder.Services.AddDbContext<CafeteriaContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("CafeteriaContext") 
-            ?? throw new InvalidOperationException("Connection string 'CafeteriaContext' not found.")));
+// Criar o aplicativo
+var app = builder.Build();
 
-        builder.Services.AddControllersWithViews();
-
-        var app = builder.Build();
-
-        var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
-        app.UseRequestLocalization(localizationOptions);
-
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/Home/Error");
-            app.UseHsts();
-        }
-
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
-
-        app.UseRouting();
-
-        app.UseAuthorization();
-
-        app.MapControllerRoute(
-            name: "default",
-            pattern: "{controller=Home}/{action=Index}/{id?}");
-
-        app.Run();
-    }
+// Configuração do pipeline de requisição
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
 }
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+// Configurar localização
+app.UseRequestLocalization(localizationOptions);
+
+app.UseRouting();
+app.UseAuthorization();
+
+// Definir as rotas
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Rodar o aplicativo
+app.Run();
